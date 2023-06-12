@@ -1,0 +1,13 @@
+[package]
+name = "hello_world" # the name of the package
+version = "0.1.0"    # the current version, obeying semver
+authors = ["Alice <a@example.com>", "Bob <b@example.com>"]
+
+# Example of customizing the library in Cargo.toml.
+[lib]
+crate-type = ["cdylib"]
+bench = false
+path = "src/robustats.rs"
+
+[dependencies]
+libc = "0.2"
