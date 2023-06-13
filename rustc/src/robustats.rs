@@ -7,7 +7,7 @@ extern "C" {
     fn free(__ptr: *mut libc::c_void);
 }
 use std::iter::zip;
-mod my_base;
+mod base;
 
 pub type int64_t = libc::c_long;
 #[no_mangle]
@@ -27,16 +27,16 @@ pub unsafe extern "C" fn weighted_median(
     let mut w_higher_sum: libc::c_double = 0.;
     let mut w_higher_sum_norm: libc::c_double = 0.;
     xw_n = end - begin + 1 as libc::c_int as libc::c_long;
-    let mut xw: *mut *mut libc::c_double = my_base::zip(x, w, xw_n) as *mut *mut libc::c_double;
-    let mut w_sum: libc::c_double = my_base::sum_double(w, xw_n) as libc::c_double;
+    let mut xw: *mut *mut libc::c_double = base::zip(x, w, xw_n) as *mut *mut libc::c_double;
+    let mut w_sum: libc::c_double = base::sum_double(w, xw_n) as libc::c_double;
     loop {
         n = end - begin + 1 as libc::c_int as libc::c_long;
         if n == 1 as libc::c_int as libc::c_long {
-            my_base::free_zip_memory(xw, xw_n);
+            base::free_zip_memory(xw, xw_n);
             return *x.offset(begin as isize);
         } else {
             if n == 2 as libc::c_int as libc::c_long {
-                my_base::free_zip_memory(xw, xw_n);
+                base::free_zip_memory(xw, xw_n);
                 if *w.offset(begin as isize) >= *w.offset(end as isize) {
                     return *x.offset(begin as isize)
                 } else {
@@ -46,12 +46,12 @@ pub unsafe extern "C" fn weighted_median(
                 median_index = begin
                     + (n - 1 as libc::c_int as libc::c_long)
                         / 2 as libc::c_int as libc::c_long;
-                median = my_base::partition_on_kth_smallest_2d(
+                median = base::partition_on_kth_smallest_2d(
                     xw,
                     begin,
                     end,
-                    2 as libc::c_int,
-                    0 as libc::c_int,
+                    (2 as libc::c_int).into(),
+                    (0 as libc::c_int).into(),
                     median_index,
                 ) as libc::c_double;
                 w_lower_sum = 0.0f64;
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn weighted_median(
                 }
                 w_higher_sum_norm = w_higher_sum / w_sum;
                 if w_lower_sum_norm < 0.5f64 && w_higher_sum_norm < 0.5f64 {
-                    my_base::free_zip_memory(xw, xw_n);
+                    base::free_zip_memory(xw, xw_n);
                     return median;
                 } else {
                     if w_lower_sum_norm > 0.5f64 {
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn h_kernel(
     let mut a: libc::c_double = *z_plus.offset(i as isize);
     let mut b: libc::c_double = *z_minus.offset(j as isize);
     if fabs(a - b) <= 2 as libc::c_int as libc::c_double * epsilon {
-        return my_base::sign(n_plus - i - j - 1 as libc::c_int as libc::c_long) as libc::c_double
+        return base::sign((n_plus - i - j - 1 as libc::c_int as libc::c_long) as f64) as libc::c_double
     } else {
         return (a + b) / (a - b)
     };
@@ -124,7 +124,7 @@ pub unsafe extern "C" fn where_h_greater_than_u(
     mut epsilon: libc::c_double,
     mut k_epsilon: libc::c_double,
 ) {
-    my_base::fill_array_int(p, n_p, 0 as libc::c_int);
+    base::fill_array_int(p, n_p, (0 as libc::c_int).into());
     let mut h: libc::c_double = 0.;
     let mut j: int64_t = 0 as libc::c_int as int64_t;
     let mut i: int64_t = n_plus - 1 as libc::c_int as libc::c_long;
@@ -150,7 +150,7 @@ pub unsafe extern "C" fn where_h_less_than_u(
     mut epsilon: libc::c_double,
     mut k_epsilon: libc::c_double,
 ) {
-    my_base::fill_array_int(q, n_q, 0 as libc::c_int);
+    base::fill_array_int(q, n_q, (0 as libc::c_int).into());
     let mut h: libc::c_double = 0.;
     let mut j: int64_t = n_minus - 1 as libc::c_int as libc::c_long;
     let mut i: int64_t = 0 as libc::c_int as int64_t;
@@ -189,7 +189,7 @@ pub unsafe extern "C" fn medcouple(
         return 1.0f64;
     }
     let mut scale_factor: libc::c_double = (2 as libc::c_int
-        * my_base::max_(
+        * base::max_(
             *x.offset(0 as libc::c_int as isize) - median,
             median - *x.offset((n - 1 as libc::c_int as libc::c_long) as isize),
         )) as libc::c_double;
@@ -234,12 +234,12 @@ pub unsafe extern "C" fn medcouple(
         (n_plus as libc::c_ulong)
             .wrapping_mul(::std::mem::size_of::<int64_t>() as libc::c_ulong),
     ) as *mut int64_t;
-    my_base::fill_array_int(left_border, n_plus, 0 as libc::c_int);
+    base::fill_array_int(left_border, n_plus, (0 as libc::c_int).into());
     let mut right_border: *mut int64_t = malloc(
         (n_plus as libc::c_ulong)
             .wrapping_mul(::std::mem::size_of::<int64_t>() as libc::c_ulong),
     ) as *mut int64_t;
-    my_base::fill_array_int(right_border, n_plus, n_minus - 1 as libc::c_int as libc::c_long);
+    base::fill_array_int(right_border, n_plus, n_minus - 1 as libc::c_int as libc::c_long);
     let mut left_total: int64_t = 0 as libc::c_int as int64_t;
     let mut right_total: int64_t = n_minus * n_plus;
     let mut medcouple_index: int64_t = right_total / 2 as libc::c_int as libc::c_long;
@@ -331,13 +331,13 @@ pub unsafe extern "C" fn medcouple(
             wm_epsilon,
             epsilon2,
         );
-        right_tent_total = my_base::sum_int(right_border_tent, n_plus) as libc::c_long + n_plus;
-        left_tent_total = my_base::sum_int(left_border_tent, n_plus) as int64_t;
+        right_tent_total = base::sum_int(right_border_tent, n_plus) as libc::c_long + n_plus;
+        left_tent_total = base::sum_int(left_border_tent, n_plus) as int64_t;
         if medcouple_index <= right_tent_total - 1 as libc::c_int as libc::c_long {
-            my_base::copy_array_int(right_border_tent, right_border, n_plus);
+            base::copy_array_int(right_border_tent, right_border, n_plus);
             right_total = right_tent_total;
         } else if medcouple_index > left_tent_total - 1 as libc::c_int as libc::c_long {
-            my_base::copy_array_int(left_border_tent, left_border, n_plus);
+            base::copy_array_int(left_border_tent, left_border, n_plus);
             left_total = left_tent_total;
         } else {
             free(row_medians as *mut libc::c_void);
@@ -383,7 +383,7 @@ pub unsafe extern "C" fn medcouple(
         }
         i += 1;
     }
-    let mut medcouple_: libc::c_double = -my_base::select_kth_smallest(
+    let mut medcouple_: libc::c_double = -base::select_kth_smallest(
         remaining,
         n_remaining,
         medcouple_index - left_total,
